@@ -1,0 +1,408 @@
+
+#:import Factory kivy.factory.Factory
+#:import np numpy
+#:import os os
+#:import VBAP VBAP
+#:import gui GUI2
+
+<Source_layout>:
+    id: source_layout
+    position_x: x_input.text
+    position_y: y_input.text
+    position_z: z_input.text
+    volume: slider.value
+    
+    LabelButton:
+        text: source_layout.name
+        on_press: 
+            popup_name = Factory.Popup()
+            popup_name.size_hint = (0.5,0.2)
+            popup_name.title = 'Type a name'
+            
+            txt_input = Factory.TextInput()
+            txt_input.multiline = False
+            txt_input.bind(on_text_validate = popup_name.dismiss)
+            
+            popup_name.add_widget(txt_input)
+            popup_name.bind(on_dismiss = lambda self: exec('source_layout.name = txt_input.text'))
+            popup_name.open()                
+        
+    BoxLayout:
+        orientation: 'vertical'
+        
+        LabelButton:
+            text: 'Position'
+            on_press: print('Ajouter coordonnees sphériques')
+        BoxLayout:
+            TextInput:
+                id: x_input
+                multiline: False
+                input_filter: 'float'
+            TextInput:
+                id: y_input
+                multiline: False
+                input_filter: 'float'
+            TextInput:
+                id: z_input
+                multiline: False
+                input_filter: 'float'
+    
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Volume'
+        BoxLayout:
+        
+            Slider:
+                id: slider
+                log: True
+                
+                min: 0.01
+                max: 1
+                step: 0.01
+                value: 1
+            
+            Label:
+                size_hint_x: 0.3
+                text: '{:.0f} dB'.format(20*np.log10(slider.value))
+        
+    BoxLayout:
+        orientation: 'vertical'
+        
+        LabelButton:
+            text: 'File'
+            on_press: 
+                popup_file = Factory.Popup()
+                popup_file.title = 'Select an audio file'
+                popup_file.size_hint = (0.6,0.8)
+                
+                filechooser = Factory.FileChooserListView()
+                filechooser.path = './'
+                filechooser.filters = ['*.wav']
+                filechooser.bind(on_submit = lambda self,selection,touch: (exec("source_layout.filename = self.selection and self.selection[0] or ''"),popup_file.dismiss()))
+                
+                popup_file.add_widget(filechooser)
+                popup_file.open()
+        
+        TextInput:
+            text: os.path.basename(source_layout.filename)
+        
+    Button:
+        text: 'Delete'
+        background_normal: ''
+        background_color: 178/255, 34/255, 34/255, .85
+        on_press: 
+            source_layout.sources_screen.n_sources=source_layout.sources_screen.n_sources-1
+            source_layout.sources_screen.list_source.remove(source_layout)
+            source_layout.sources_screen.ids['scrollbox'].remove_widget(source_layout)
+            
+        
+<Loudspeaker_layout>:
+    id:loudspeaker_layout
+    
+    position_x: x_input.text
+    position_y: y_input.text
+    position_z: z_input.text
+    
+    nom_gain: slider_gain.value
+    nom_delay: slider_delay.value
+    
+    soundcard_output: soundcard_txt_input.text
+    
+    LabelButton:
+        text: loudspeaker_layout.name
+        on_press: 
+            popup_name = Factory.Popup()
+            popup_name.size_hint = (0.5,0.2)
+            popup_name.title = 'Type a name'
+            
+            txt_input = Factory.TextInput()
+            txt_input.multiline = False
+            txt_input.bind(on_text_validate = popup_name.dismiss)
+            
+            popup_name.add_widget(txt_input)
+            popup_name.bind(on_dismiss = lambda self: exec('loudspeaker_layout.name = txt_input.text'))
+            popup_name.open() 
+            
+    BoxLayout:
+        orientation: 'vertical'
+        
+        LabelButton:
+            text: 'Position'
+            on_press: print('Ajouter coordonnees sphériques')
+        BoxLayout:
+            TextInput:
+                id: x_input
+                multiline: False
+                input_filter: 'float'
+            TextInput:
+                id: y_input
+                multiline: False
+                input_filter: 'float'
+            TextInput:
+                id: z_input
+                multiline: False
+                input_filter: 'float'
+                
+    BoxLayout:
+        orientation: 'vertical'
+        
+        LabelButton:
+            text: 'Nominal Gain'
+            on_press: print('Calcul auto du gain')
+        BoxLayout:
+            Slider:
+                id: slider_gain
+                min:0
+                max:1
+                step:0.01
+                value: loudspeaker_layout.nom_gain
+            Label:
+                size_hint: (0.3,1)
+                text: '{:.1f}dB'.format(20*np.log10(loudspeaker_layout.nom_gain))
+    
+    BoxLayout:
+        orientation: 'vertical'
+        
+        LabelButton:
+            text: 'Nominal Delay'
+            on_press: print('Calcul auto du delay')
+        BoxLayout:
+            Slider:
+                id: slider_delay
+                min:0
+                max:0.01
+                step:0.0001
+                value: loudspeaker_layout.nom_delay
+            Label:
+                size_hint: (0.3,1)
+                text: '{:.1f}ms'.format(slider_delay.value*1000)
+    
+    BoxLayout:
+        orientation: 'vertical'
+        
+        LabelButton:
+            text: 'Soundcard ouput'
+            on_press: 
+                popup_soundcard = Factory.Popup()
+                popup_soundcard.title = 'Select output'
+                popup_soundcard.size_hint = (0.6,0.8)
+                
+                bl = Factory.BoxLayout(orientation='vertical')
+                gui.show_output(bl,loudspeaker_layout)
+                scrl = Factory.ScrollView()
+                scrl.add_widget(bl)
+                popup_soundcard.add_widget(scrl)
+                popup_soundcard.open() 
+                
+        TextInput:
+            id: soundcard_txt_input
+            multiline: False
+            text: loudspeaker_layout.soundcard_output
+    
+        
+    Button:
+        text: 'Delete'
+        background_normal: ''
+        background_color: 178/255, 34/255, 34/255, .85
+        on_press: 
+            loudspeaker_layout.loudspeakers_screen.n_loudspeakers = loudspeaker_layout.loudspeakers_screen.n_loudspeakers-1
+            loudspeaker_layout.loudspeakers_screen.list_loudspeaker.remove(loudspeaker_layout)
+            loudspeaker_layout.loudspeakers_screen.ids['scrollbox'].remove_widget(loudspeaker_layout)
+
+
+
+<Main_screen>:
+    id: main_screen
+    BoxLayout:
+        orientation: 'vertical'
+        BoxLayout:
+            size_hint: 1,0.1
+            Button:
+                text: 'Sources screen'
+                on_press: 
+                    main_screen.manager.transition.direction = 'right'
+                    main_screen.manager.current = 'sources'
+            Button
+                text: 'Loudspeakers screen'
+                on_press: 
+                    main_screen.manager.transition.direction = 'left'
+                    main_screen.manager.current = 'loudspeakers'
+        View3D:
+            id: view3D
+        Button:
+            text: 'Play VBAP'
+            size_hint: 1,0.1
+            on_press: 
+                ls_list = main_screen.manager.screens[2].list_loudspeaker
+                src_list = main_screen.manager.screens[1].list_source
+                VBAP.find_alltriplets(src_list,ls_list)
+                vbap_matrix=VBAP.computeVBAP(src_list,ls_list)
+                VBAP.play_vbap(ls_list,src_list,vbap_matrix)
+                
+    #FloatLayout:
+        #Label:
+            #size_hint: 0.1,0.1
+            #pos_hint: {'x':0.9,'y':0.1}
+            #text: 'Test'
+            
+<Sources_screen>:
+    id: sources_screen
+    BoxLayout:
+        orientation: 'vertical'
+        BoxLayout:
+            size_hint: 1,0.1
+            Button:
+                text: 'Main screen'
+                view3D: sources_screen.manager.screens[0].ids.view3D
+                on_press:
+                    list_loudspeakers= sources_screen.manager.screens[2].list_loudspeaker
+                    self.view3D.refresh_3Dview(sources_screen.list_source,list_loudspeakers)
+                    sources_screen.manager.transition.direction = 'left'
+                    sources_screen.manager.current = 'main'
+        ScrollView:
+            BoxLayout:
+                id: scrollbox
+                orientation:'vertical'
+                size_hint: None,None
+                size: sources_screen.width, sources_screen.height/10*(sources_screen.n_sources+1)
+                Button:
+                    text: 'Add source'
+                    on_press: 
+                        sources_screen.n_sources=sources_screen.n_sources+1
+                        widget=Factory.Source_layout()
+                        widget.sources_screen = sources_screen
+                        sources_screen.list_source.append(widget)
+                        widget.name='Source '+str(len(sources_screen.list_source))
+                        scrollbox.add_widget(widget,index=1)
+
+                    size_hint: None,None
+                    size: sources_screen.width, sources_screen.height/10
+                    
+        BoxLayout:
+            size_hint: 1,0.1
+            Button:
+                text: 'Open'
+                on_press: 
+                    popup_file = Factory.Popup()
+                    popup_file.title = 'Save source file'
+                    popup_file.size_hint = (0.6,0.8)
+                    
+                    filechooser = Factory.FileChooserListView()
+                    filechooser.path = './'
+                    #filechooser.filters = ['*.txt']
+                    filechooser.bind(on_submit = sources_screen.open_conf)
+                    
+                    popup_file.add_widget(filechooser)
+                    popup_file.open()
+                    
+            Button:
+                text: 'Save'
+                on_press:                   
+                    popup_file = Factory.Popup()
+                    popup_file.title = 'Select a source file'
+                    popup_file.size_hint = (0.6,0.8)
+                    
+                    filechooser = Factory.FileChooserListView()
+                    filechooser.path = './'
+                    filechooser.bind(on_submit=lambda self,value,position:exec('file_txt_input.text=os.path.basename(value[0])'))
+                    
+                    file_txt_input = Factory.TextInput(size_hint=(1,0.1),multiline=False)
+                    file_txt_input.text='sources.src'
+                    
+                    save_btn = Factory.Button(text='Save',size_hint=(1,0.1))  
+                    save_btn.bind(on_press=lambda self:sources_screen.save_conf(filechooser.path+file_txt_input.text,popup_file))                
+                    
+                    bl = Factory.BoxLayout(orientation='vertical')
+                    bl.add_widget(filechooser)
+                    bl.add_widget(file_txt_input)
+                    bl.add_widget(save_btn)
+                    
+                    popup_file.add_widget(bl)
+                    popup_file.open()
+                
+                
+<Loudspeakers_screen>:
+    id: loudspeakers_screen
+    BoxLayout:
+        orientation: 'vertical'
+        BoxLayout:
+            size_hint: 1,0.1
+            Button:
+                text: 'Main screen'
+                view3D: loudspeakers_screen.manager.screens[0].ids.view3D
+                on_press:
+                    list_source= loudspeakers_screen.manager.screens[1].list_source
+                    self.view3D.refresh_3Dview(list_source,loudspeakers_screen.list_loudspeaker)
+                    loudspeakers_screen.manager.transition.direction = 'right'
+                    loudspeakers_screen.manager.current = 'main'
+        ScrollView:
+            BoxLayout:
+                id: scrollbox
+                orientation:'vertical'
+                size_hint: None,None
+                size: loudspeakers_screen.width, loudspeakers_screen.height/10*(loudspeakers_screen.n_loudspeakers+1)
+                Button:
+                    text: 'Add loudspeaker'
+                    on_press: 
+                        loudspeakers_screen.n_loudspeakers=loudspeakers_screen.n_loudspeakers+1
+                        widget=Factory.Loudspeaker_layout()
+                        loudspeakers_screen.list_loudspeaker.append(widget)
+                        widget.name='Loudspeaker '+str(len(loudspeakers_screen.list_loudspeaker))
+                        widget.loudspeakers_screen = loudspeakers_screen
+                        scrollbox.add_widget(widget,index=1)
+        Button:
+            size_hint: 1,0.1
+            text: 'Compute all nominal parameters'
+            on_press: VBAP.computeAllNominal(loudspeakers_screen.list_loudspeaker)
+        
+        BoxLayout:
+            size_hint: 1,0.1
+            Button:
+                text: 'Open'
+                on_press: 
+                    popup_file = Factory.Popup()
+                    popup_file.title = 'Save loudspeaker file'
+                    popup_file.size_hint = (0.6,0.8)
+                    
+                    filechooser = Factory.FileChooserListView()
+                    filechooser.path = './'
+                    #filechooser.filters = ['*.txt']
+                    filechooser.bind(on_submit = loudspeakers_screen.open_conf)
+                    
+                    popup_file.add_widget(filechooser)
+                    popup_file.open()
+            Button:
+                text: 'Save'
+                on_press:                   
+                    popup_file = Factory.Popup()
+                    popup_file.title = 'Select a loudspeaker file'
+                    popup_file.size_hint = (0.6,0.8)
+                    
+                    filechooser = Factory.FileChooserListView()
+                    filechooser.path = './'
+                    filechooser.bind(on_submit=lambda self,value,position:exec('file_txt_input.text=os.path.basename(value[0])'))
+                    
+                    file_txt_input = Factory.TextInput(size_hint=(1,0.1),multiline=False)
+                    file_txt_input.text='loudspeakers.ls'
+                    
+                    save_btn = Factory.Button(text='Save',size_hint=(1,0.1))  
+                    save_btn.bind(on_press=lambda self:loudspeakers_screen.save_conf(filechooser.path+file_txt_input.text,popup_file))                
+                    
+                    bl = Factory.BoxLayout(orientation='vertical')
+                    bl.add_widget(filechooser)
+                    bl.add_widget(file_txt_input)
+                    bl.add_widget(save_btn)
+                    
+                    popup_file.add_widget(bl)
+                    popup_file.open()
+            
+<ScreenManag>:
+    id: sm
+    Main_screen:
+        manager: sm
+        name: 'main'
+    Sources_screen:
+        name: 'sources'
+    Loudspeakers_screen:
+        name: 'loudspeakers'            
